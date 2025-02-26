@@ -139,6 +139,8 @@ public class Main {
             StyleConstants.setForeground(errorStyle, Color.RED);
 
             int lastIndex = 0;
+            int currentLine = 1;
+            int currentColumn = 1;
 
             while (true) {
                 token = lexer.yylex();
@@ -147,23 +149,30 @@ public class Main {
                     break;
                 }
 
-                int startIndex = token.getCharBegin();
-                int endIndex = token.getCharEnd();
+                // Find the token in the file content
+                String tokenLexeme = token.getLexeme();
+                int startIndex = fileContent.indexOf(tokenLexeme, lastIndex);
+                int endIndex = startIndex + tokenLexeme.length();
 
                 // Add any skipped text with default style
                 if (startIndex > lastIndex) {
-                    doc.insertString(doc.getLength(), fileContent.substring(lastIndex, startIndex), defaultStyle);
+                    String skippedText = fileContent.substring(lastIndex, startIndex);
+                    doc.insertString(doc.getLength(), skippedText, defaultStyle);
+                    currentLine += countNewlines(skippedText);
+                    currentColumn = getLastLineLength(skippedText) + 1;
                 }
 
                 // Add token text with appropriate style
                 if (token.getType().equals("ERROR")) {
-                    doc.insertString(doc.getLength(), fileContent.substring(startIndex, endIndex), errorStyle);
+                    doc.insertString(doc.getLength(), tokenLexeme, errorStyle);
                     hasErrors = true;
                 } else {
-                    doc.insertString(doc.getLength(), fileContent.substring(startIndex, endIndex), validStyle);
+                    doc.insertString(doc.getLength(), tokenLexeme, validStyle);
                 }
 
                 lastIndex = endIndex;
+                currentLine += countNewlines(tokenLexeme);
+                currentColumn = getLastLineLength(tokenLexeme) + 1;
             }
 
             // Add any remaining text
@@ -184,6 +193,15 @@ public class Main {
         } catch (Exception e) {
             outputArea.setText("Unexpected error: " + e.getMessage());
         }
+    }
+
+    private int countNewlines(String text) {
+        return (int) text.chars().filter(ch -> ch == '\n').count();
+    }
+
+    private int getLastLineLength(String text) {
+        int lastNewlineIndex = text.lastIndexOf('\n');
+        return lastNewlineIndex == -1 ? text.length() : text.length() - lastNewlineIndex - 1;
     }
 
     public static void main(String[] args) {
