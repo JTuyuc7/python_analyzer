@@ -1,5 +1,6 @@
 import java.io.*;
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,7 +11,7 @@ import java.util.List;
 public class Main {
 
     private JFrame frame;
-    private JTextArea outputArea;
+    private JTextPane outputArea;
     private JButton loadButton;
     private File selectedFile;
     private List<String> validNumberes;
@@ -78,7 +79,7 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout());
 
-        outputArea = new JTextArea();
+        outputArea = new JTextPane();
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
         frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -96,7 +97,6 @@ public class Main {
             }
         });
 
-
         frame.setVisible(true);
     }
 
@@ -112,10 +112,13 @@ public class Main {
         }
     }
 
-    private void processData(File file){
+    private void processData(File file) {
         try {
+            // Read the entire file content
+            String fileContent = new String(java.nio.file.Files.readAllBytes(file.toPath()));
+            
             // Create a reader for the input file
-            Reader reader = new FileReader(file);
+            Reader reader = new StringReader(fileContent);
 
             // Create the lexer
             PythonLexer lexer = new PythonLexer(reader);
@@ -124,7 +127,18 @@ public class Main {
             Token token;
             boolean hasErrors = false;
 
-            outputArea.setText(""); // Clear previous output
+            // Clear previous output
+            outputArea.setText("");
+            StyledDocument doc = outputArea.getStyledDocument();
+
+            // Define styles
+            Style defaultStyle = outputArea.addStyle("default", null);
+            Style validStyle = outputArea.addStyle("valid", null);
+            StyleConstants.setForeground(validStyle, Color.BLUE);
+            Style errorStyle = outputArea.addStyle("error", null);
+            StyleConstants.setForeground(errorStyle, Color.RED);
+
+            int lastIndex = 0;
 
             while (true) {
                 token = lexer.yylex();
@@ -133,29 +147,42 @@ public class Main {
                     break;
                 }
 
+                int startIndex = token.getCharBegin();
+                int endIndex = token.getCharEnd();
+
+                // Add any skipped text with default style
+                if (startIndex > lastIndex) {
+                    doc.insertString(doc.getLength(), fileContent.substring(lastIndex, startIndex), defaultStyle);
+                }
+
+                // Add token text with appropriate style
                 if (token.getType().equals("ERROR")) {
-                    String errorMessage = String.format("Lexical error at line %d, column %d: Unexpected character '%s'%n",
-                            token.getLine(), token.getColumn(), token.getLexeme());
-                    outputArea.append(errorMessage);
+                    doc.insertString(doc.getLength(), fileContent.substring(startIndex, endIndex), errorStyle);
                     hasErrors = true;
                 } else {
-                    // For debugging/verification, print all tokens
-                    outputArea.append(token.toString() + "\n");
+                    doc.insertString(doc.getLength(), fileContent.substring(startIndex, endIndex), validStyle);
                 }
+
+                lastIndex = endIndex;
+            }
+
+            // Add any remaining text
+            if (lastIndex < fileContent.length()) {
+                doc.insertString(doc.getLength(), fileContent.substring(lastIndex), defaultStyle);
             }
 
             if (!hasErrors) {
-                outputArea.append("Lexical analysis completed successfully.\n");
+                doc.insertString(doc.getLength(), "\nLexical analysis completed successfully.", defaultStyle);
             }
 
             reader.close();
 
         } catch (FileNotFoundException e) {
-            outputArea.append("Error: Input file not found\n");
+            outputArea.setText("Error: Input file not found");
         } catch (IOException e) {
-            outputArea.append("Error reading input file: " + e.getMessage() + "\n");
+            outputArea.setText("Error reading input file: " + e.getMessage());
         } catch (Exception e) {
-            outputArea.append("Unexpected error: " + e.getMessage() + "\n");
+            outputArea.setText("Unexpected error: " + e.getMessage());
         }
     }
 
