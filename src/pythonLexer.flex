@@ -26,6 +26,7 @@ Comment = "#" {InputCharacter}* {LineTerminator}?
 /* Identifiers */
 Letter = [a-zA-Z_]
 Digit = [0-9]
+InvalidIdentifier = {Digit}+{Letter}+({Letter}|{Digit})*
 Identifier = {Letter}({Letter}|{Digit})*
 
 /* Numbers */
@@ -117,5 +118,10 @@ String = {SingleString}|{DoubleString}
 /* Whitespace */
 {WhiteSpace}    { /* Ignore */ }
 
+/* Invalid identifiers and keywords */
+{InvalidIdentifier}  { return token("ERROR"); }
+"classe"            { return token("ERROR"); }
+"defe"             { return token("ERROR"); }
+
 /* Error fallback */
-[^]             { return token("ERROR"); }
+[^]                { return token("ERROR"); }

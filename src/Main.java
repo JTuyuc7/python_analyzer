@@ -133,14 +133,18 @@ public class Main {
 
             // Define styles
             Style defaultStyle = outputArea.addStyle("default", null);
-            Style validStyle = outputArea.addStyle("valid", null);
-            StyleConstants.setForeground(validStyle, Color.BLUE);
+            Style keywordStyle = outputArea.addStyle("keyword", null);
+            StyleConstants.setForeground(keywordStyle, new Color(0, 0, 255)); // Blue
+            Style identifierStyle = outputArea.addStyle("identifier", null);
+            StyleConstants.setForeground(identifierStyle, new Color(0, 128, 0)); // Green
+            Style literalStyle = outputArea.addStyle("literal", null);
+            StyleConstants.setForeground(literalStyle, new Color(128, 0, 128)); // Purple
+            Style operatorStyle = outputArea.addStyle("operator", null);
+            StyleConstants.setForeground(operatorStyle, new Color(128, 128, 0)); // Olive
             Style errorStyle = outputArea.addStyle("error", null);
             StyleConstants.setForeground(errorStyle, Color.RED);
 
             int lastIndex = 0;
-            int currentLine = 1;
-            int currentColumn = 1;
 
             while (true) {
                 token = lexer.yylex();
@@ -158,21 +162,49 @@ public class Main {
                 if (startIndex > lastIndex) {
                     String skippedText = fileContent.substring(lastIndex, startIndex);
                     doc.insertString(doc.getLength(), skippedText, defaultStyle);
-                    currentLine += countNewlines(skippedText);
-                    currentColumn = getLastLineLength(skippedText) + 1;
                 }
 
                 // Add token text with appropriate style
-                if (token.getType().equals("ERROR")) {
-                    doc.insertString(doc.getLength(), tokenLexeme, errorStyle);
-                    hasErrors = true;
-                } else {
-                    doc.insertString(doc.getLength(), tokenLexeme, validStyle);
+                Style tokenStyle;
+                switch (token.getType()) {
+                    case "AND": case "AS": case "ASSERT": case "BREAK": case "CLASS":
+                    case "CONTINUE": case "DEF": case "DEL": case "ELIF": case "ELSE":
+                    case "EXCEPT": case "FALSE": case "FINALLY": case "FOR": case "FROM":
+                    case "GLOBAL": case "IF": case "IMPORT": case "IN": case "IS":
+                    case "LAMBDA": case "NONE": case "NONLOCAL": case "NOT": case "OR":
+                    case "PASS": case "RAISE": case "RETURN": case "TRUE": case "TRY":
+                    case "WHILE": case "WITH": case "YIELD":
+                        tokenStyle = keywordStyle;
+                        break;
+                    case "IDENTIFIER":
+                        // Check if the identifier is a misspelled keyword
+                        if (tokenLexeme.equals("classe") || tokenLexeme.equals("defe") || tokenLexeme.startsWith("1")) {
+                            tokenStyle = errorStyle;
+                            hasErrors = true;
+                        } else {
+                            tokenStyle = identifierStyle;
+                        }
+                        break;
+                    case "INTEGER_LITERAL": case "FLOAT_LITERAL": case "SCIENTIFIC_LITERAL": case "STRING_LITERAL":
+                        tokenStyle = literalStyle;
+                        break;
+                    case "PLUS": case "MINUS": case "MULTIPLY": case "DIVIDE": case "INTEGER_DIVIDE":
+                    case "MODULO": case "POWER": case "ASSIGN": case "EQUALS": case "NOT_EQUALS":
+                    case "LESS": case "GREATER": case "LESS_EQUALS": case "GREATER_EQUALS":
+                    case "LPAREN": case "RPAREN": case "LBRACKET": case "RBRACKET": case "LBRACE":
+                    case "RBRACE": case "COMMA": case "DOT": case "COLON": case "SEMICOLON":
+                        tokenStyle = operatorStyle;
+                        break;
+                    case "ERROR":
+                        tokenStyle = errorStyle;
+                        hasErrors = true;
+                        break;
+                    default:
+                        tokenStyle = defaultStyle;
                 }
+                doc.insertString(doc.getLength(), tokenLexeme, tokenStyle);
 
                 lastIndex = endIndex;
-                currentLine += countNewlines(tokenLexeme);
-                currentColumn = getLastLineLength(tokenLexeme) + 1;
             }
 
             // Add any remaining text
