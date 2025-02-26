@@ -124,6 +124,8 @@ public class Main {
             Token token;
             boolean hasErrors = false;
 
+            outputArea.setText(""); // Clear previous output
+
             while (true) {
                 token = lexer.yylex();
 
@@ -132,30 +134,28 @@ public class Main {
                 }
 
                 if (token.getType().equals("ERROR")) {
-                    System.out.printf("Lexical error at line %d, column %d: Unexpected character '%s'%n",
+                    String errorMessage = String.format("Lexical error at line %d, column %d: Unexpected character '%s'%n",
                             token.getLine(), token.getColumn(), token.getLexeme());
+                    outputArea.append(errorMessage);
                     hasErrors = true;
                 } else {
                     // For debugging/verification, print all tokens
-                    System.out.println(token.getLexeme() + "aca");
+                    outputArea.append(token.toString() + "\n");
                 }
             }
 
             if (!hasErrors) {
-                System.out.println("Lexical analysis completed successfully.");
+                outputArea.append("Lexical analysis completed successfully.\n");
             }
 
             reader.close();
 
         } catch (FileNotFoundException e) {
-            System.out.println("Error: Input file not found");
-            System.exit(1);
+            outputArea.append("Error: Input file not found\n");
         } catch (IOException e) {
-            System.out.println("Error reading input file: " + e.getMessage());
-            System.exit(1);
+            outputArea.append("Error reading input file: " + e.getMessage() + "\n");
         } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-            System.exit(1);
+            outputArea.append("Unexpected error: " + e.getMessage() + "\n");
         }
     }
 
