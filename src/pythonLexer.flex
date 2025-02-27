@@ -26,7 +26,7 @@ Comment = "#" {InputCharacter}* {LineTerminator}?
 /* Identifiers */
 Letter = [a-zA-Z_]
 Digit = [0-9]
-InvalidIdentifier = {Digit}+{Letter}+({Letter}|{Digit})*
+InvalidIdentifier = {Digit}+({Letter}|{Digit})*{Letter}+({Letter}|{Digit})*
 Identifier = {Letter}({Letter}|{Digit})*
 
 /* Numbers */
@@ -41,6 +41,13 @@ DoubleString = \"{StringCharacter}*\"
 String = {SingleString}|{DoubleString}
 
 %%
+
+/* Rule order is important! Put error catching rules before valid ones */
+
+/* Invalid identifiers and keywords - must come before regular identifiers */
+{InvalidIdentifier}  { return token("INVALID_IDENTIFIER"); }
+"classe"            { return token("INVALID_KEYWORD"); }
+"defe"              { return token("INVALID_KEYWORD"); }
 
 /* Keywords */
 "and"           { return token("AND"); }
@@ -103,7 +110,7 @@ String = {SingleString}|{DoubleString}
 ":"             { return token("COLON"); }
 ";"             { return token("SEMICOLON"); }
 
-/* Identifiers */
+/* Identifiers (must come after all keywords and invalid identifiers) */
 {Identifier}    { return token("IDENTIFIER"); }
 
 /* Literals */
@@ -117,11 +124,6 @@ String = {SingleString}|{DoubleString}
 
 /* Whitespace */
 {WhiteSpace}    { /* Ignore */ }
-
-/* Invalid identifiers and keywords */
-{InvalidIdentifier}  { return token("ERROR"); }
-"classe"            { return token("ERROR"); }
-"defe"             { return token("ERROR"); }
 
 /* Error fallback */
 [^]                { return token("ERROR"); }

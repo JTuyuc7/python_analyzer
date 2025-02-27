@@ -131,18 +131,32 @@ public class Main {
             outputArea.setText("");
             StyledDocument doc = outputArea.getStyledDocument();
 
-            // Define styles
+            // Define styles with enhanced colors
             Style defaultStyle = outputArea.addStyle("default", null);
+            
             Style keywordStyle = outputArea.addStyle("keyword", null);
             StyleConstants.setForeground(keywordStyle, new Color(0, 0, 255)); // Blue
+            StyleConstants.setBold(keywordStyle, true);
+            
             Style identifierStyle = outputArea.addStyle("identifier", null);
             StyleConstants.setForeground(identifierStyle, new Color(0, 128, 0)); // Green
+            
             Style literalStyle = outputArea.addStyle("literal", null);
             StyleConstants.setForeground(literalStyle, new Color(128, 0, 128)); // Purple
+            
+            Style stringStyle = outputArea.addStyle("string", null);
+            StyleConstants.setForeground(stringStyle, new Color(200, 0, 0)); // Red
+            
             Style operatorStyle = outputArea.addStyle("operator", null);
             StyleConstants.setForeground(operatorStyle, new Color(128, 128, 0)); // Olive
+            
+            Style commentStyle = outputArea.addStyle("comment", null);
+            StyleConstants.setForeground(commentStyle, new Color(128, 128, 128)); // Gray
+            StyleConstants.setItalic(commentStyle, true);
+            
             Style errorStyle = outputArea.addStyle("error", null);
             StyleConstants.setForeground(errorStyle, Color.RED);
+            StyleConstants.setBackground(errorStyle, new Color(255, 200, 200)); // Light red background
 
             int lastIndex = 0;
 
@@ -177,16 +191,13 @@ public class Main {
                         tokenStyle = keywordStyle;
                         break;
                     case "IDENTIFIER":
-                        // Check if the identifier is a misspelled keyword
-                        if (tokenLexeme.equals("classe") || tokenLexeme.equals("defe") || tokenLexeme.startsWith("1")) {
-                            tokenStyle = errorStyle;
-                            hasErrors = true;
-                        } else {
-                            tokenStyle = identifierStyle;
-                        }
+                        tokenStyle = identifierStyle;
                         break;
-                    case "INTEGER_LITERAL": case "FLOAT_LITERAL": case "SCIENTIFIC_LITERAL": case "STRING_LITERAL":
+                    case "INTEGER_LITERAL": case "FLOAT_LITERAL": case "SCIENTIFIC_LITERAL":
                         tokenStyle = literalStyle;
+                        break;
+                    case "STRING_LITERAL":
+                        tokenStyle = stringStyle;
                         break;
                     case "PLUS": case "MINUS": case "MULTIPLY": case "DIVIDE": case "INTEGER_DIVIDE":
                     case "MODULO": case "POWER": case "ASSIGN": case "EQUALS": case "NOT_EQUALS":
@@ -195,7 +206,10 @@ public class Main {
                     case "RBRACE": case "COMMA": case "DOT": case "COLON": case "SEMICOLON":
                         tokenStyle = operatorStyle;
                         break;
-                    case "ERROR":
+                    case "COMMENT":
+                        tokenStyle = commentStyle;
+                        break;
+                    case "ERROR": case "INVALID_IDENTIFIER": case "INVALID_KEYWORD":
                         tokenStyle = errorStyle;
                         hasErrors = true;
                         break;
@@ -212,8 +226,15 @@ public class Main {
                 doc.insertString(doc.getLength(), fileContent.substring(lastIndex), defaultStyle);
             }
 
+            // Show analysis result
+            Style resultStyle = outputArea.addStyle("result", null);
+            StyleConstants.setBold(resultStyle, true);
             if (!hasErrors) {
-                doc.insertString(doc.getLength(), "\nLexical analysis completed successfully.", defaultStyle);
+                StyleConstants.setForeground(resultStyle, new Color(0, 128, 0)); // Green
+                doc.insertString(doc.getLength(), "\n\nLexical analysis completed successfully.", resultStyle);
+            } else {
+                StyleConstants.setForeground(resultStyle, Color.RED);
+                doc.insertString(doc.getLength(), "\n\nLexical analysis found errors.", resultStyle);
             }
 
             reader.close();

@@ -13,6 +13,6 @@ classe LabelsUi:
         self.label = tk.Label(text=self.text, font=self.font)
         self.label.grid(**self.grid)
 
-    defe update_text(self, new_text):
+    1def update_text(self, new_text):
         if self.label:
             self.label.config(text=new_text)
