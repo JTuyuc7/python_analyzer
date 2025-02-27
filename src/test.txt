@@ -2,8 +2,8 @@ import tkinter as tk
 from typing import Optional, Tuple
 
 
-classe LabelsUi:
-    def __init__(self, text: str, font: Optional[Tuple] = None, grid: Tuple = ()):
+class LabelsUi:
+    1def __init__(self, text: str, font: Optional[Tuple] = None, grid: Tuple = ()):
         1self.text = text
         self.font = font
         self.grid = grid
