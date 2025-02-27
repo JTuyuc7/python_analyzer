@@ -23,11 +23,14 @@ InputCharacter = [^\r\n]
 /* Comments */
 Comment = "#" {InputCharacter}* {LineTerminator}?
 
-/* Identifiers */
+/* Identifiers and Keywords */
 Letter = [a-zA-Z_]
 Digit = [0-9]
-InvalidIdentifier = {Digit}+{Letter}+({Letter}|{Digit})*
 Identifier = {Letter}({Letter}|{Digit})*
+InvalidIdentifier = {Digit}+{Letter}+({Letter}|{Digit})*
+
+/* Potential Keywords - any word that might be trying to be a keyword */
+PotentialKeyword = [a-z]+
 
 /* Numbers */
 Integer = {Digit}+
@@ -118,10 +121,28 @@ String = {SingleString}|{DoubleString}
 /* Whitespace */
 {WhiteSpace}    { /* Ignore */ }
 
-/* Invalid identifiers and keywords */
-{InvalidIdentifier}  { return token("ERROR"); }
-"classe"            { return token("ERROR"); }
-"defe"             { return token("ERROR"); }
+/* Invalid identifiers */
+{InvalidIdentifier}    { return token("ERROR"); }
 
-/* Error fallback */
-[^]                { return token("ERROR"); }
+/* Potential Keywords - check if it's a valid keyword, otherwise it's an error */
+{PotentialKeyword} {
+    String text = yytext();
+    switch(text) {
+        case "and": case "as": case "assert": case "break": case "class":
+        case "continue": case "def": case "del": case "elif": case "else":
+        case "except": case "false": case "finally": case "for": case "from":
+        case "global": case "if": case "import": case "in": case "is":
+        case "lambda": case "none": case "nonlocal": case "not": case "or":
+        case "pass": case "raise": case "return": case "true": case "try":
+        case "while": case "with": case "yield":
+            return token(text.toUpperCase());
+        default:
+            return token("ERROR");
+    }
+}
+
+/* Valid identifier (must come after keyword checks) */
+{Identifier}          { return token("IDENTIFIER"); }
+
+/* Error fallback - catch any other character */
+[^]                   { return token("ERROR"); }
