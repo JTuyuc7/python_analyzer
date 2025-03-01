@@ -131,32 +131,51 @@ public class Main {
             outputArea.setText("");
             StyledDocument doc = outputArea.getStyledDocument();
 
-            // Define styles with enhanced colors
+// Define styles with Python IDLE-like colors
             Style defaultStyle = outputArea.addStyle("default", null);
-            
+
+// Keywords (orange/brown like Python)
             Style keywordStyle = outputArea.addStyle("keyword", null);
-            StyleConstants.setForeground(keywordStyle, new Color(0, 0, 255)); // Blue
+            StyleConstants.setForeground(keywordStyle, new Color(255, 119, 0)); // Python orange
             StyleConstants.setBold(keywordStyle, true);
-            
+
+// Control flow keywords (same orange as keywords)
+            Style controlStyle = outputArea.addStyle("control", null);
+            StyleConstants.setForeground(controlStyle, new Color(255, 119, 0));
+            StyleConstants.setBold(controlStyle, true);
+
+// Identifiers (black, default color)
             Style identifierStyle = outputArea.addStyle("identifier", null);
-            StyleConstants.setForeground(identifierStyle, new Color(0, 128, 0)); // Green
-            
+            StyleConstants.setForeground(identifierStyle, new Color(0, 0, 0));
+
+// Numbers and literals (same as regular text)
             Style literalStyle = outputArea.addStyle("literal", null);
-            StyleConstants.setForeground(literalStyle, new Color(128, 0, 128)); // Purple
-            
+            StyleConstants.setForeground(literalStyle, new Color(0, 0, 0));
+
+// Strings (green like Python)
             Style stringStyle = outputArea.addStyle("string", null);
-            StyleConstants.setForeground(stringStyle, new Color(200, 0, 0)); // Red
-            
+            StyleConstants.setForeground(stringStyle, new Color(0, 128, 0));
+
+// Operators (black like Python)
             Style operatorStyle = outputArea.addStyle("operator", null);
-            StyleConstants.setForeground(operatorStyle, new Color(128, 128, 0)); // Olive
-            
+            StyleConstants.setForeground(operatorStyle, new Color(0, 0, 0));
+
+// Comments (red like Python)
             Style commentStyle = outputArea.addStyle("comment", null);
-            StyleConstants.setForeground(commentStyle, new Color(128, 128, 128)); // Gray
-            StyleConstants.setItalic(commentStyle, true);
-            
+            StyleConstants.setForeground(commentStyle, new Color(200, 0, 0));
+
+// Decorators (same as keywords)
+            Style decoratorStyle = outputArea.addStyle("decorator", null);
+            StyleConstants.setForeground(decoratorStyle, new Color(255, 119, 0));
+
+// Built-in functions (purple like Python)
+            Style builtinStyle = outputArea.addStyle("builtin", null);
+            StyleConstants.setForeground(builtinStyle, new Color(160, 32, 240));
+
+// Error highlighting
             Style errorStyle = outputArea.addStyle("error", null);
-            StyleConstants.setForeground(errorStyle, Color.RED);
-            StyleConstants.setBackground(errorStyle, new Color(255, 200, 200)); // Light red background
+            StyleConstants.setForeground(errorStyle, new Color(204, 0, 0));
+            StyleConstants.setBackground(errorStyle, new Color(255, 200, 200));
 
             int lastIndex = 0;
 
@@ -181,15 +200,26 @@ public class Main {
                 // Add token text with appropriate style
                 Style tokenStyle;
                 switch (token.getType()) {
-                    case "AND": case "AS": case "ASSERT": case "BREAK": case "CLASS":
-                    case "CONTINUE": case "DEF": case "DEL": case "ELIF": case "ELSE":
-                    case "EXCEPT": case "FALSE": case "FINALLY": case "FOR": case "FROM":
-                    case "GLOBAL": case "IF": case "IMPORT": case "IN": case "IS":
-                    case "LAMBDA": case "NONE": case "NONLOCAL": case "NOT": case "OR":
-                    case "PASS": case "RAISE": case "RETURN": case "TRUE": case "TRY":
-                    case "WHILE": case "WITH": case "YIELD":
+                    // Control flow keywords
+                    case "IF": case "ELSE": case "ELIF": case "FOR": case "WHILE":
+                    case "TRY": case "EXCEPT": case "FINALLY": case "BREAK": case "CONTINUE":
+                        tokenStyle = controlStyle;
+                        break;
+                    // Definition keywords
+                    case "DEF": case "CLASS": case "LAMBDA":
+                        tokenStyle = decoratorStyle;
+                        break;
+                    // Standard keywords
+                    case "AND": case "AS": case "ASSERT": case "DEL": case "FROM":
+                    case "GLOBAL": case "IMPORT": case "IN": case "IS": case "NONE":
+                    case "NONLOCAL": case "NOT": case "OR": case "PASS": case "RAISE":
+                    case "RETURN": case "WITH": case "YIELD":
                         tokenStyle = keywordStyle;
                         break;
+                    case "TRUE": case "FALSE":
+                        tokenStyle = builtinStyle;
+                        break;
+                    // Rest of the cases remain the same
                     case "IDENTIFIER":
                         tokenStyle = identifierStyle;
                         break;
