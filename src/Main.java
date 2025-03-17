@@ -13,6 +13,7 @@ public class Main {
 
     private JFrame frame;
     private JTextPane outputArea;
+    private JTextPane errorArea;
     private JButton loadButton;
     private File selectedFile;
     private List<String> validNumberes;
@@ -25,14 +26,25 @@ public class Main {
     private void initialize(){
         frame = new JFrame();
         frame.setTitle("Python Analyzer");
-        frame.setBounds(100, 100, 450, 500);
+        frame.setBounds(100, 100, 650, 700);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout());
 
+        // Main text area for code
         outputArea = new JTextPane();
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
-        frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        
+        // Error information area
+        errorArea = new JTextPane();
+        errorArea.setEditable(false);
+        errorArea.setPreferredSize(new Dimension(frame.getWidth(), 100));
+        JScrollPane errorScrollPane = new JScrollPane(errorArea);
+        
+        // Create a split pane to hold both text areas
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollPane, errorScrollPane);
+        splitPane.setResizeWeight(0.8); // Give more space to the main text area
+        frame.getContentPane().add(splitPane, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
         frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
@@ -79,7 +91,14 @@ public class Main {
 
             // Clear previous output
             outputArea.setText("");
+            errorArea.setText("");
             StyledDocument doc = outputArea.getStyledDocument();
+            StyledDocument errorDoc = errorArea.getStyledDocument();
+            
+            // Create styles for error information
+            Style errorInfoStyle = errorArea.addStyle("errorInfo", null);
+            StyleConstants.setFontFamily(errorInfoStyle, "Monospace");
+            StyleConstants.setForeground(errorInfoStyle, new Color(204, 0, 0));
 
 // Define styles with Python IDLE-like colors
             Style defaultStyle = outputArea.addStyle("default", null);
@@ -214,6 +233,10 @@ public class Main {
                     case "ERROR": case "INVALID_IDENTIFIER": case "INVALID_KEYWORD":
                         tokenStyle = errorStyle;
                         hasErrors = true;
+                        // Add error information to error area
+                        String errorInfo = String.format("Error at line %d, column %d: Invalid token '%s'\n",
+                            token.getLine(), token.getColumn(), token.getLexeme());
+                        errorDoc.insertString(errorDoc.getLength(), errorInfo, errorInfoStyle);
                         break;
                     default:
                         tokenStyle = defaultStyle;
@@ -234,6 +257,7 @@ public class Main {
             if (!hasErrors) {
                 StyleConstants.setForeground(resultStyle, new Color(0, 128, 0)); // Green
                 doc.insertString(doc.getLength(), "\n\nLexical analysis completed successfully.", resultStyle);
+                errorDoc.insertString(0, "No errors found.", errorInfoStyle);
             } else {
                 StyleConstants.setForeground(resultStyle, Color.RED);
                 doc.insertString(doc.getLength(), "\n\nLexical analysis found errors.", resultStyle);
