@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileReader;
 import java.util.List;
+import java.util.Arrays;
 
 public class Main {
 
@@ -19,58 +20,7 @@ public class Main {
     public Main(){
         initialize();
     }
-
-    public static void main2(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Usage: java PythonAnalyzer <input-file>");
-            System.exit(1);
-        }
-
-        try {
-            // Create a reader for the input file
-            Reader reader = new FileReader(args[0]);
-
-            // Create the lexer
-            PythonLexer lexer = new PythonLexer(reader);
-
-            // Analyze the input
-            Token token;
-            boolean hasErrors = false;
-
-            while (true) {
-                token = lexer.yylex();
-
-                if (token == null) {
-                    break;
-                }
-
-                if (token.getType().equals("ERROR")) {
-                    System.out.printf("Lexical error at line %d, column %d: Unexpected character '%s'%n",
-                            token.getLine(), token.getColumn(), token.getLexeme());
-                    hasErrors = true;
-                } else {
-                    // For debugging/verification, print all tokens
-                    System.out.println(token);
-                }
-            }
-
-            if (!hasErrors) {
-                System.out.println("Lexical analysis completed successfully.");
-            }
-
-            reader.close();
-
-        } catch (FileNotFoundException e) {
-            System.out.println("Error: Input file not found");
-            System.exit(1);
-        } catch (IOException e) {
-            System.out.println("Error reading input file: " + e.getMessage());
-            System.exit(1);
-        } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-            System.exit(1);
-        }
-    }
+    
 
     private void initialize(){
         frame = new JFrame();
@@ -133,46 +83,58 @@ public class Main {
 
 // Define styles with Python IDLE-like colors
             Style defaultStyle = outputArea.addStyle("default", null);
+            StyleConstants.setForeground(defaultStyle, new Color(0, 0, 0));
 
-// Keywords (orange/brown like Python)
+            // Keywords (orange like Python)
             Style keywordStyle = outputArea.addStyle("keyword", null);
-            StyleConstants.setForeground(keywordStyle, new Color(255, 119, 0)); // Python orange
+            StyleConstants.setForeground(keywordStyle, new Color(255, 119, 0));
             StyleConstants.setBold(keywordStyle, true);
 
-// Control flow keywords (same orange as keywords)
+            // Control flow keywords (same as keywords)
             Style controlStyle = outputArea.addStyle("control", null);
             StyleConstants.setForeground(controlStyle, new Color(255, 119, 0));
             StyleConstants.setBold(controlStyle, true);
 
-// Identifiers (black, default color)
+            // Identifiers (black, default color)
             Style identifierStyle = outputArea.addStyle("identifier", null);
             StyleConstants.setForeground(identifierStyle, new Color(0, 0, 0));
 
-// Numbers and literals (same as regular text)
-            Style literalStyle = outputArea.addStyle("literal", null);
-            StyleConstants.setForeground(literalStyle, new Color(0, 0, 0));
+            // Numbers (blue like Python)
+            Style numberStyle = outputArea.addStyle("number", null);
+            StyleConstants.setForeground(numberStyle, new Color(0, 0, 255));
 
-// Strings (green like Python)
+            // Strings (green like Python)
             Style stringStyle = outputArea.addStyle("string", null);
             StyleConstants.setForeground(stringStyle, new Color(0, 128, 0));
 
-// Operators (black like Python)
+            // Operators (black like Python)
             Style operatorStyle = outputArea.addStyle("operator", null);
             StyleConstants.setForeground(operatorStyle, new Color(0, 0, 0));
 
-// Comments (red like Python)
+            // Comments (red like Python)
             Style commentStyle = outputArea.addStyle("comment", null);
             StyleConstants.setForeground(commentStyle, new Color(200, 0, 0));
+            StyleConstants.setItalic(commentStyle, true);
 
-// Decorators (same as keywords)
+            // Decorators (blue like Python)
             Style decoratorStyle = outputArea.addStyle("decorator", null);
-            StyleConstants.setForeground(decoratorStyle, new Color(255, 119, 0));
+            StyleConstants.setForeground(decoratorStyle, new Color(0, 0, 255));
 
-// Built-in functions (purple like Python)
+            // Built-in functions and constants (purple like Python)
             Style builtinStyle = outputArea.addStyle("builtin", null);
             StyleConstants.setForeground(builtinStyle, new Color(160, 32, 240));
 
-// Error highlighting
+            // Class names (dark blue)
+            Style classStyle = outputArea.addStyle("class", null);
+            StyleConstants.setForeground(classStyle, new Color(0, 0, 128));
+            StyleConstants.setBold(classStyle, true);
+
+            // Function names (dark green)
+            Style functionStyle = outputArea.addStyle("function", null);
+            StyleConstants.setForeground(functionStyle, new Color(0, 128, 0));
+            StyleConstants.setBold(functionStyle, true);
+
+            // Error highlighting
             Style errorStyle = outputArea.addStyle("error", null);
             StyleConstants.setForeground(errorStyle, new Color(204, 0, 0));
             StyleConstants.setBackground(errorStyle, new Color(255, 200, 200));
@@ -206,25 +168,35 @@ public class Main {
                         tokenStyle = controlStyle;
                         break;
                     // Definition keywords
-                    case "DEF": case "CLASS": case "LAMBDA":
-                        tokenStyle = decoratorStyle;
+                    case "DEF":
+                        tokenStyle = functionStyle;
+                        break;
+                    case "CLASS":
+                        tokenStyle = classStyle;
+                        break;
+                    case "LAMBDA":
+                        tokenStyle = keywordStyle;
                         break;
                     // Standard keywords
                     case "AND": case "AS": case "ASSERT": case "DEL": case "FROM":
-                    case "GLOBAL": case "IMPORT": case "IN": case "IS": case "NONE":
+                    case "GLOBAL": case "IMPORT": case "IN": case "IS":
                     case "NONLOCAL": case "NOT": case "OR": case "PASS": case "RAISE":
                     case "RETURN": case "WITH": case "YIELD":
                         tokenStyle = keywordStyle;
                         break;
-                    case "TRUE": case "FALSE":
+                    case "TRUE": case "FALSE": case "NONE":
                         tokenStyle = builtinStyle;
                         break;
-                    // Rest of the cases remain the same
                     case "IDENTIFIER":
-                        tokenStyle = identifierStyle;
+                        // Check if it's a built-in function
+                        if (isBuiltInFunction(token.getLexeme())) {
+                            tokenStyle = builtinStyle;
+                        } else {
+                            tokenStyle = identifierStyle;
+                        }
                         break;
                     case "INTEGER_LITERAL": case "FLOAT_LITERAL": case "SCIENTIFIC_LITERAL":
-                        tokenStyle = literalStyle;
+                        tokenStyle = numberStyle;
                         break;
                     case "STRING_LITERAL":
                         tokenStyle = stringStyle;
@@ -290,5 +262,18 @@ public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new Main());
 //        private static final String REGEX = "^[0-9]+(\\.[0-9]+)?E[+-]?[0-9]+$";
+    }
+
+    private boolean isBuiltInFunction(String identifier) {
+        String[] builtIns = {
+            "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr",
+            "classmethod", "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate",
+            "eval", "exec", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr",
+            "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len",
+            "list", "locals", "map", "max", "memoryview", "min", "next", "object", "oct", "open",
+            "ord", "pow", "print", "property", "range", "repr", "reversed", "round", "set", "setattr",
+            "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple", "type", "vars", "zip"
+        };
+        return Arrays.asList(builtIns).contains(identifier);
     }
 }
